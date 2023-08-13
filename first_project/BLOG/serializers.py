@@ -7,5 +7,3 @@ class BlogUserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'password')
         read_only_fields = ('id',)
 
-
-
