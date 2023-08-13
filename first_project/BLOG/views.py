@@ -18,7 +18,7 @@ def generate_access_token(user) -> None :
 
      access_token = jwt.encode(payload, 'secret', algorithm='HS256')
      return access_token
-     
+
 
 class Test(APIView):
     def get(self, request):
@@ -56,5 +56,12 @@ class Login(APIView):
             #check_password(login_input, db_current_password)
             password_check = check_password(pass_word, logged_user.password)
             if password_check : 
-                return Response({'message' : 'login success'})
+                token = generate_access_token(logged_user)
+                response = Response()
+                response.set_cookie('access_token', value=token, httponly=True)
+                response.data = {
+                    'message' : 'user logged in successfully',
+                    'user_info' : serializer.data
+                }
+                return response
             return Response({'message' : 'invalid credentials'})
