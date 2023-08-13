@@ -6,7 +6,6 @@ class BlogUser(models.Model):
     username = models.CharField(max_length=255, null=False)
     password = models.CharField(max_length=255, null=False)
     
-
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
     postTitle = models.CharField(max_length=255, null=False)
