@@ -132,8 +132,44 @@ class Post(APIView):
             return Response({'message' : 'post created successfully', 'post_data' : serializer.data})
         return Response({'error' : 'data is not valid'})
 
-# post_5 = Post.objects.get(id=5)
-# post_5.delete()
+    def get(self, request) : 
+        token = request.COOKIES.get('access_token')
+        if not token : 
+            return Response({'message' : 'unauthenticated'})
+        try : 
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        serializer = serializers.PostSerializer(data=request.data)
+        try : 
+            logged_user = models.BlogUser.objects.get(id=payload['user_id'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+
+        posts = models.Post.objects.all() 
+        serializer = serializers.PostSerializer(posts, many=True)
+        return Response({'data' : serializer.data})
+    def delete(self, request)  :
+        token = request.COOKIES.get('access_token')
+        if not token : 
+            return Response({'message' : 'unauthenticated'})
+        try : 
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        serializer = serializers.PostSerializer(data=request.data)
+        try : 
+            logged_user = models.BlogUser.objects.get(id=payload['user_id'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        post_id = request.query_params.get('post_id')
+        post_to_delete = models.Post.objects.get(id=post_id)
+        post_to_delete.delete()
+        return Response({'message' : 'post has been deleted'})
+
+ 
+
+
 
 
 
