@@ -11,4 +11,7 @@ class Post(models.Model):
     postTitle = models.CharField(max_length=255, null=False)
     postContent = models.CharField(max_length=255, null=False)
     postOwner = models.ForeignKey(BlogUser, on_delete=models.CASCADE, null=True)
+    
+
+
 
