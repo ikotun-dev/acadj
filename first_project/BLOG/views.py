@@ -166,8 +166,53 @@ class Post(APIView):
         post_to_delete = models.Post.objects.get(id=post_id)
         post_to_delete.delete()
         return Response({'message' : 'post has been deleted'})
+    def put(self, request) : 
+        token = request.COOKIES.get('access_token')
+        if not token : 
+            return Response({'message' : 'unauthenticated'})
+        try : 
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        serializer = serializers.PostSerializer(data=request.data)
+        try : 
+            logged_user = models.BlogUser.objects.get(id=payload['user_id'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        post_id = request.query_params.get('post_id')
+        try : 
+            post_to_update = models.Post.objects.get(id=post_id)
+        except Exception as e :
+            return Response({'error' : str(e)})
+        serializer = serializers.PostSerializer(post_to_update, data=request.data, partial=True)
+        if serializer.is_valid() : 
+            serializer.save()
+            return Response({'message' : 'post has been updated successfully', 'data' : serializer.data})
+        return Response({'message' : 'serializer is not valid'})
 
- 
+
+
+class PersonalView(APIView) : 
+    def get(self, request) : 
+        token = request.COOKIES.get('access_token')
+        if not token : 
+            return Response({'message' : 'unauthenticated'})
+        try : 
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        serializer = serializers.PostSerializer(data=request.data)
+        try : 
+            logged_user = models.BlogUser.objects.get(id=payload['user_id'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+
+        posts = models.Post.objects.filter(postOwner = logged_user)
+        posts_to_show = serializers.PostSerializer(posts, many=True)
+        return Response({'data' : posts_to_show.data})
+
+        
+
 
 
 
