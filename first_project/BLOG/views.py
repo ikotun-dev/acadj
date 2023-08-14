@@ -7,6 +7,8 @@ from . import serializers
 from . import models 
 from django.contrib.auth.hashers import make_password, check_password
 from datetime import datetime, timedelta
+from django.db.models import Q
+
 import jwt #the jwt library
 
 
@@ -77,40 +79,6 @@ class Login(APIView):
 
 
             return Response({'message' : 'invalid credentials'})
-
-# class Post(APIView):
-#     def post(self, request) : 
-#         token = request.COOKIES.get('access_token')
-#         if not token : 
-#                  return Response({'message' : 'unauthenticated'}, status=status.HTTP_401_UNAUTHORIZED)
-#         try : 
-#             payload = jwt.decode(token, 'secret', algorithms=['HS256'])
-#         except Exception as e :
-#             return Response({'error' : str(e), 'message' : 'an error occured'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         serializer = serializers.PostSerializer(data=request.data)
-#         logged_user = models.BlogUser.objects.get(id=payload['user_id'])
-#         if serializer.is_valid():
-#             try : 
-#                 serializer.save(postOwner=logged_user)
-#             except Exception as e : 
-#                 return Response({'error' : str(e)})
-#             return Response({'message' : 'post has been created successfully'}, status=status.HTTP_201_CREATED)
-#         return Response({'message' : 'data not valid'}, status=status.HTTP_400_BAD_REQUEST)
-
-#     def get(self, request) : 
-#         token = request.COOKIES.get('access_token')
-#         if not token : 
-#                  return Response({'message' : 'unauthenticated'}, status=status.HTTP_401_UNAUTHORIZED)
-#         try : 
-#             payload = jwt.decode(token, 'secret', algorithms=['HS256'])
-#         except Exception as e :
-#             return Response({'error' : str(e), 'message' : 'an error occured'}, status=status.HTTP_400_BAD_REQUEST)
-#         serializer = serializers.PostSerializer(models.Post.objects.all(), many=True)
-#        # if serializer.is_valid() : 
-#         return Response({'data' : serializer.data })
-        
-
 
 
 class Post(APIView):
@@ -211,7 +179,23 @@ class PersonalView(APIView) :
         posts_to_show = serializers.PostSerializer(posts, many=True)
         return Response({'data' : posts_to_show.data})
 
-        
+class SearchPost(APIView) : 
+    def get(self, request) : 
+        token = request.COOKIES.get('access_token')
+        if not token : 
+            return Response({'message' : 'unauthenticated'})
+        try : 
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        serializer = serializers.PostSerializer(data=request.data)
+        try : 
+            logged_user = models.BlogUser.objects.get(id=payload['user_id'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        search_query = request.query_params.get('search')
+        posts = models.Post.objects.filter(Q)
+
 
 
 
