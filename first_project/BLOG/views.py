@@ -150,6 +150,8 @@ class Post(APIView):
         post_id = request.query_params.get('post_id')
         try : 
             post_to_update = models.Post.objects.get(id=post_id)
+            if post_to_update.postOwner != logged_user : 
+                return Response({'message' : 'this post does not belong to you'})
         except Exception as e :
             return Response({'error' : str(e)})
         serializer = serializers.PostSerializer(post_to_update, data=request.data, partial=True)
@@ -194,7 +196,7 @@ class SearchPost(APIView) :
         except Exception as e : 
             return Response({'error' : str(e)})
         search_query = request.query_params.get('search')
-        posts = models.Post.objects.filter(Q(postTitle__icontains=search_query) | Q(postContent__icontains=search_query))
+        posts = models.Post.objects.filter(Q(postTitle__icontains=search_query))
         if posts : 
             posts_to_show = serializers.PostSerializer(posts, many=True)
             return Response({'data' : posts_to_show.data})
@@ -203,4 +205,90 @@ class SearchPost(APIView) :
 
 
 
+class HirerSignup(APIView) : 
+    def post(self, request) : 
+        serializer = serializers.HirerSerializer(data=request.data)
+        if serializer.is_valid() : 
+            user_name = serializer.validated_data['username']
+            if models.Hirer.objects.filter(username=user_name).exists(): 
+                return Response({'message' : 'user with the username already exists'})
+            serializer.save(password=make_password(serializer.validated_data.get('password')))
+            return Response({'message' : 'account has been created successfully'})
+        return Response({'message' : 'serializer is not valid'})
 
+class HirerLogin(APIView) : 
+    def post(self, request) : 
+        serializer = serializers.HirerSerializer(data=request.data)
+        if serializer.is_valid():
+            user_name = serializer.validated_data.get('username')
+            if models.Hirer.objects.filter(username=user_name).exists(): 
+                logged_user = models.Hirer.objects.get(username=user_name)
+                validate = check_password(serializer.validated_data['password'], logged_user.password)
+                if validate : 
+                    token = generate_access_token(logged_user)  
+                    response = Response()
+                    response.set_cookie('access_token', value=token, httponly=True)
+                    response.data = { 
+                        'message' : 'login successful',
+                        'access_token' : token
+                    }
+                    return response 
+
+                return Response({'message' : 'invalid credentials'})
+            return Response({'message' : 'invalid credentials'})
+        return Response({'message' : 'serializer is not valid'})
+
+class FreelancerSignup(APIView) : 
+    def post(self, request) : 
+        serializer = serializers.FreelancerSerializer(data=request.data)
+        if serializer.is_valid() : 
+            user_name = serializer.validated_data['username']
+            if models.Hirer.objects.filter(username=user_name).exists(): 
+                return Response({'message' : 'user with the username already exists'})
+            serializer.save(password=make_password(serializer.validated_data.get('password')))
+            return Response({'message' : 'account has been created successfully'})
+        return Response
+
+class FreelancerLogin(APIView) : 
+    def post(self, request) : 
+        serializer = serializers.FreelancerSerializer(data=request.data)
+        if serializer.is_valid():
+            user_name = serializer.validated_data.get('username')
+            if models.Freelancer.objects.filter(username=user_name).exists(): 
+                logged_user = models.Freelancer.objects.get(username=user_name)
+                validate = check_password(serializer.validated_data['password'], logged_user.password)
+                if validate : 
+                    token = generate_access_token(logged_user)  
+                    response = Response()
+                    response.set_cookie('free_access_token', value=token, httponly=True)
+                    response.data = { 
+                        'message' : 'login successful',
+                        'free_access_token' : token
+                    }
+                    return response 
+
+                return Response({'message' : 'invalid credentials'})
+            return Response({'message' : 'invalid credentials'})
+        return Response({'message' : 'serializer is not valid'})
+
+class CreateJob(APIView):
+    def post(self, request) : 
+        token = request.COOKIES.get('access_token')
+        if not token : 
+            return Response({'message' : 'unauthenticated'})
+        try : 
+            payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        try : 
+            logged_user = models.Hirer.objects.get(id=payload['user_id'])
+           # logged_user = models.Freelancer.objects.get(id=payload['user_id'])
+            if not logged_user : 
+                return Response({'message' : 'only an hirer can create job'})
+        except Exception as e : 
+            return Response({'error' : str(e)})
+        serializer = serializers.JobSerializer(data=request.data)
+        if serializer.is_valid() : 
+            serializer.save(jobOwner=logged_user)
+            return Response({'message' : 'job added succesfully'})
+        return Response({'message' : 'serializer is not valid'})
