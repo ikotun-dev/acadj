@@ -196,7 +196,7 @@ class SearchPost(APIView) :
         except Exception as e : 
             return Response({'error' : str(e)})
         search_query = request.query_params.get('search')
-        posts = models.Post.objects.filter(Q(postTitle__icontains=search_query))
+        posts = models.Post.objects.filter(Q(postTitle__icontains=search_query) | Q(postContent__icontains=search_query))
         if posts : 
             posts_to_show = serializers.PostSerializer(posts, many=True)
             return Response({'data' : posts_to_show.data})
