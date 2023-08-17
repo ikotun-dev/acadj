@@ -55,7 +55,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "first_project.urls"
 
-CORS_ALLOWED_ORIGIN = ['www.vodacom.com']
+CORS_ALLOWED_ORIGIN = ['*']
+
+
 
 
 
